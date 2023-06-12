@@ -84,11 +84,7 @@ last = "match"
 
 function grid:update(dt)
   if #grid.busy > 0 then return end
-  if last == "fill" then
-    grid.match()
-  elseif last == "match" then
-    grid.fill()
-  end
+  grid.match()
 end
 
 function grid.match()
@@ -115,11 +111,10 @@ function grid.match()
   for b, ball in pairs(tobepopped) do
     ball:pop()
   end
-  if change then last = "match" end
   return change
 end
 
-calls= 0
+calls = 0
 
 function grid.occupy(ball)
   calls = calls +1
@@ -137,22 +132,35 @@ end
 
 function spawnBall(i, j)
   local ball = {}
-  local pos = grid.gridToPixel(i, j)
-  ball.x, ball.y = pos.x, pos.y
-  ball.type = math.random(#cellTypes)
-  ball.color = cellTypes[ball.type].color
+  ball.x, ball.y = 0, 0
+  ball.type = 0
+  ball.color = {.6, 0, .6}
+  ball.speed = {x=0, y=0}
+  ball.init = function (self, i, j)
+    local pos = grid.gridToPixel(i, j)
+    self.x, self.y = pos.x, pos.y
+    self.type = math.random(#cellTypes)
+    self.color = cellTypes[ball.type].color
+    self.speed = {x=0, y=0}
+    self.falling = true
+    self.popped = false
+    grid.occupy(self)
+  end
   ball.draw = function (self)
     if self == grab then return end
     love.graphics.setColor(self.color)
     love.graphics.circle("fill", self.x, self.y, cellSize*.75)
     love.graphics.setColor(0, 0, 0)
     love.graphics.circle("line", self.x, self.y, cellSize*.75)
+    love.graphics.print(self.pops or 0, self.x, self.y)
   end
-  ball.speed = {x=0, y=0}
   ball.update = function (self, dt)
     if self.terminated then return end
     local gridPos = grid.pixelToGrid(self.x, self.y)
-
+    if self.popped then
+      self:init(gridPos.i, -gridPos.j)
+      gridPos = grid.pixelToGrid(self.x, self.y)
+    end
     local matchingPixelPos = grid.gridToPixel(gridPos.i, math.floor(math.max(gridPos.j, 1)))
     if (grid[gridPos.j+1] and grid[gridPos.j+1][gridPos.i] and grid[gridPos.j+1][gridPos.i].ball == nil) or self.y < matchingPixelPos.y then
       if not self.falling then
@@ -174,32 +182,20 @@ function spawnBall(i, j)
     end
   end
   ball.pop = function (self)
+    if self.popped then return end
+    self.popped = true
+    self.pops = self.pops and self.pops + 1 or 1
     grid.liberate(self)
     local gridPos = grid.pixelToGrid(self.x, self.y)
-    grid[gridPos.j][gridPos.i].type = nil
-    grid[gridPos.j][gridPos.i].ball = nil
-    self.terminated = true
-  end
-  ball.falling = true
-  grid.occupy(ball)
-  table.insert(entities, ball)
-  return ball
-end
-
-function grid.fill()
-  if #grid.busy > 0 then return end
-  local change = false
-  for j = 1, grid.dim.j do
-    for i = 1, grid.dim.i do
-      if grid[j][i].ball == nil then
-        local ball = spawnBall(i, -j)
-        ball.speed.y = 30
-        change = true
-      end
+    print(gridPos.i, gridPos.j)
+    if grid[gridPos.j] and grid[gridPos.j][gridPos.i] then
+      grid[gridPos.j][gridPos.i].type = nil
+      grid[gridPos.j][gridPos.i].ball = nil
     end
   end
-  if change then last = "fill" end
-  return change
+  ball:init(i, j)
+  table.insert(entities, ball)
+  return ball
 end
 
 function grid.switchBallAt(gridPos1, gridPos2)
@@ -235,7 +231,6 @@ function grid.colorRemoval(type)
   for b, ball in pairs(tobepopped) do
     ball:pop()
   end
-  if change then last = "match" end
   return change
 end
 
