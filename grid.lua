@@ -21,7 +21,7 @@ cellTypes = {
   ,{name = "brown", color = {1, .8,  .8}}
 }
 
-grid = {}
+grid = {x = 0, y = 0, w=0, h=0}
 grid.dim = {i = 10, j = 10}
 grid.busy = {}
 
@@ -30,6 +30,23 @@ function grid.init()
     grid[j] = {}
     for i = 1, grid.dim.i do
       grid[j][i] = {}
+    end
+  end
+end
+
+function grid.newGame(seed)
+  math.randomseed(seed or os.time())
+  for j = 1, grid.dim.j do
+    for i = 1, grid.dim.i do
+      spawnBall(i, j)
+    end
+  end
+  while grid.match() do
+    for e, entity in pairs(entities) do
+      if entity.popped then
+        local gridPos = grid.pixelToGrid(entity.x, entity.y)
+        entity:init(gridPos.i, gridPos.j)
+      end
     end
   end
 end
@@ -78,9 +95,11 @@ function grid:draw()
     love.graphics.circle("line", 0, 0, cellSize*.75)
     love.graphics.pop()
   end
+  for n, b in pairs(grid.busy) do
+    love.graphics.setColor(0, 0, 0, .3)
+    love.graphics.circle("fill", b.x, b.y+3, .8*cellSize)
+  end
 end
-
-last = "match"
 
 function grid:update(dt)
   if #grid.busy > 0 then return end
@@ -114,17 +133,14 @@ function grid.match()
   return change
 end
 
-calls = 0
-
+--  Functions for (un-)locking the grid (from making new matches or moving balls around) while balls are still falling (or animating)
 function grid.occupy(ball)
-  calls = calls +1
   table.insert(grid.busy, ball)
 end
 
 function grid.liberate(ball)
   for n = #grid.busy, 1, -1 do
     if grid.busy[n]== ball then
-      calls = calls -1
       table.remove(grid.busy, n)
     end
   end
@@ -142,9 +158,14 @@ function spawnBall(i, j)
     self.type = math.random(#cellTypes)
     self.color = cellTypes[ball.type].color
     self.speed = {x=0, y=0}
-    self.falling = true
     self.popped = false
-    grid.occupy(self)
+    if grid[j] and grid[j][i] then
+      grid[j][i].type = self.type
+      grid[j][i].ball = self
+    else
+      self.falling = true
+      grid.occupy(self)
+    end
   end
   ball.draw = function (self)
     if self == grab then return end
@@ -152,7 +173,6 @@ function spawnBall(i, j)
     love.graphics.circle("fill", self.x, self.y, cellSize*.75)
     love.graphics.setColor(0, 0, 0)
     love.graphics.circle("line", self.x, self.y, cellSize*.75)
-    love.graphics.print(self.pops or 0, self.x, self.y)
   end
   ball.update = function (self, dt)
     if self.terminated then return end
@@ -184,10 +204,8 @@ function spawnBall(i, j)
   ball.pop = function (self)
     if self.popped then return end
     self.popped = true
-    self.pops = self.pops and self.pops + 1 or 1
     grid.liberate(self)
     local gridPos = grid.pixelToGrid(self.x, self.y)
-    print(gridPos.i, gridPos.j)
     if grid[gridPos.j] and grid[gridPos.j][gridPos.i] then
       grid[gridPos.j][gridPos.i].type = nil
       grid[gridPos.j][gridPos.i].ball = nil
