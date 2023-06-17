@@ -133,7 +133,7 @@ function grid.match()
   return change
 end
 
---  Functions for (un-)locking the grid (from making new matches or moving balls around) while balls are still falling (or animating)
+--  Functions for (un-)locking the grid while balls are still falling (or animating)
 function grid.occupy(ball)
   table.insert(grid.busy, ball)
 end

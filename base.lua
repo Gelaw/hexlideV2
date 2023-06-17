@@ -383,6 +383,7 @@ function getElementOrChildOn(ui, x, y)
         for c, child in pairs(ui.children) do
           local clickedElement = getElementOrChildOn(child, x - ui.x, y - ui.y)
           if clickedElement then
+            clickedElement.px, clickedElement.py = x - ui.x - child.x, y - ui.y - child.y
             return clickedElement
           end
         end
