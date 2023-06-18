@@ -5,7 +5,10 @@ function projectSetup()
   camera.x = width/2
   camera.y = height/2
 
-
+  -- gameplayMode = "candycrush"
+  gameplayMode = "dokkan"
+  selection = {}
+  
   mainMenu = {
     id="MenuScreen",
     x=0, y=0, w = width, h = height,
@@ -136,20 +139,28 @@ end
 
 function love.mousepressed(x, y, button, isTouch)
   local press = UIMousePress(x, y , button)
+  if #grid.busy > 0 then return end
   if not press then
-    local pos = grid.pixelToGrid(x, y)
-    if grid[pos.j] and grid[pos.j][pos.i] then
-      grab = grid[pos.j][pos.i].ball
-      grabTime = os.time()
-    else
-      grab = nil
+    if gameplayMode == "candycrush" then
+      local pos = grid.pixelToGrid(x, y)
+      if grid[pos.j] and grid[pos.j][pos.i] then
+        grab = grid[pos.j][pos.i].ball
+        grabTime = os.time()
+      end
+    end
+    if gameplayMode == "dokkan" then
+      local pos = grid.pixelToGrid(x, y)
+      if grid[pos.j] and grid[pos.j][pos.i] then
+        selection = {grid[pos.j][pos.i].ball}
+      end
     end
   end
 end
 
 function love.mousereleased(x, y, button, isTouch)
   UIMouseRelease(x, y, button)
-  if #grid.busy == 0 and  grab then
+  if #grid.busy > 0 then return end
+  if gameplayMode == "candycrush" and grab then
     local dropPos = grid.pixelToGrid(x, y)
     local grabPos = grid.pixelToGrid(grab.x, grab.y)
     if grid[dropPos.j] and grid[dropPos.j][dropPos.i] then
@@ -161,6 +172,14 @@ function love.mousereleased(x, y, button, isTouch)
       end
     end
   end
+  if gameplayMode == "dokkan" then
+    if #selection >= 3 then
+      for b, ball in pairs(selection) do
+        ball:pop()
+      end
+      selection = {}
+    end
+  end
   grab = nil
   grabTime = nil
 end
@@ -170,5 +189,20 @@ function love.keypressed(key, scancode, isrepeat)
   local num = tonumber(key)
   if num and num <= #cellTypes then
     grid.colorRemoval(num)
+  end
+end
+
+function love.mousemoved(x, y, dx, dy)
+  if #grid.busy > 0 then return end
+  if gameplayMode == "dokkan" and #selection > 0 then
+    last = selection[#selection]
+    lastGridpos = grid.pixelToGrid(last.x, last.y)
+    pos = grid.pixelToGrid(x, y)
+    if grid[pos.j] and grid[pos.j][pos.i] then
+      ballAtPos = grid[pos.j][pos.i].ball
+      if last.type == ballAtPos.type and grid.distance(lastGridpos, pos) == 1 then
+        table.insert(selection, ballAtPos)
+      end
+    end
   end
 end

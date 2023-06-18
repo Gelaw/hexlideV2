@@ -41,11 +41,13 @@ function grid.newGame(seed)
       spawnBall(i, j)
     end
   end
-  while grid.match() do
-    for e, entity in pairs(entities) do
-      if entity.popped then
-        local gridPos = grid.pixelToGrid(entity.x, entity.y)
-        entity:init(gridPos.i, gridPos.j)
+  if gameplayMode == "candycrush" then
+    while grid.match() do
+      for e, entity in pairs(entities) do
+        if entity.popped then
+          local gridPos = grid.pixelToGrid(entity.x, entity.y)
+          entity:init(gridPos.i, gridPos.j)
+        end
       end
     end
   end
@@ -102,7 +104,7 @@ function grid:draw()
 end
 
 function grid:update(dt)
-  if #grid.busy > 0 then return end
+  if #grid.busy > 0 or gameplayMode ~= "candycrush" then return end
   grid.match()
 end
 
