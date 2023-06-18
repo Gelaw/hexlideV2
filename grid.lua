@@ -10,22 +10,26 @@ end
 
 cellTypes = {
   --minimum types
-  {name = "red", color = {1, 0, 0}},
-  {name = "green", color = {0, 1, 0}},
-  {name = "blue", color = {0, 0, 1}},
+  {name = "red", color = {.8, 0, 0}},
+  {name = "green", color = {0, .8, 0}},
+  {name = "blue", color = {0, 0, .8}},
 
   --optional types / Commentable lignes
-  {name = "yellow", color = {1, 1, 0}}
-  ,{name = "purple", color = {1, 0, 1}}
-  ,{name = "cyan", color = {0, 1, 1}}
-  ,{name = "brown", color = {1, .8,  .8}}
+  {name = "yellow", color = {.8, .8, 0}}
+  ,{name = "purple", color = {.8, 0, .8}}
+  ,{name = "cyan", color = {0, .8, .8}}
+  ,{name = "brown", color = {.8, .6,  .6}}
 }
 
-grid = {x = 0, y = 0, w=0, h=0}
-grid.dim = {i = 10, j = 10}
-grid.busy = {}
+grid = {x = 0, y = 0, w=0, h=0, busy = {}}
 
 function grid.init()
+  grid.dim = {i = 10, j = 10}
+  grid.busy = {}
+  grid.fallHeight = {}
+  for i = 1, grid.dim.i do
+    grid.fallHeight[i] = 1
+  end
   for j = 1, grid.dim.j do
     grid[j] = {}
     for i = 1, grid.dim.i do
@@ -88,6 +92,9 @@ function grid:draw()
       love.graphics.pop()
     end
   end
+end
+
+addDrawFunction( function ()
   if grab then
     love.graphics.push()
     love.graphics.translate(love.mouse.getX(), love.mouse.getY())
@@ -97,11 +104,19 @@ function grid:draw()
     love.graphics.circle("line", 0, 0, cellSize*.75)
     love.graphics.pop()
   end
+  if selection then
+    for b, ball in pairs(selection) do
+      love.graphics.push()
+      love.graphics.setColor(1, 1, 1, .1)
+      love.graphics.circle("fill", ball.x, ball.y, cellSize*.75)
+      love.graphics.pop()
+    end
+  end
   for n, b in pairs(grid.busy) do
-    love.graphics.setColor(0, 0, 0, .3)
+    love.graphics.setColor(0, 0, 0, .1)
     love.graphics.circle("fill", b.x, b.y+3, .8*cellSize)
   end
-end
+end, 6)
 
 function grid:update(dt)
   if #grid.busy > 0 or gameplayMode ~= "candycrush" then return end
@@ -146,6 +161,11 @@ function grid.liberate(ball)
       table.remove(grid.busy, n)
     end
   end
+  if #grid.busy == 0 then
+    for i = 1, grid.dim.i do
+      grid.fallHeight[i] = 1
+    end
+  end
 end
 
 function spawnBall(i, j)
@@ -180,7 +200,8 @@ function spawnBall(i, j)
     if self.terminated then return end
     local gridPos = grid.pixelToGrid(self.x, self.y)
     if self.popped then
-      self:init(gridPos.i, -gridPos.j)
+      self:init(gridPos.i, -grid.fallHeight[gridPos.i])
+      grid.fallHeight[gridPos.i] = grid.fallHeight[gridPos.i] + 1
       gridPos = grid.pixelToGrid(self.x, self.y)
     end
     local matchingPixelPos = grid.gridToPixel(gridPos.i, math.floor(math.max(gridPos.j, 1)))

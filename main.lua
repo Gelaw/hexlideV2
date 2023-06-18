@@ -8,7 +8,7 @@ function projectSetup()
   -- gameplayMode = "candycrush"
   gameplayMode = "dokkan"
   selection = {}
-  
+
   mainMenu = {
     id="MenuScreen",
     x=0, y=0, w = width, h = height,
