@@ -5,9 +5,9 @@ function projectSetup()
   camera.x = width/2
   camera.y = height/2
 
-  -- gameplayMode = "candycrush"
-  gameplayMode = "dokkan"
-  selection = {}
+  gameplayModes = {"candycrush", "dokkan"}
+  gameplayMode = "candycrush"
+
 
   mainMenu = {
     id="MenuScreen",
@@ -26,6 +26,29 @@ function projectSetup()
   } 
   table.insert(uis, gameMenu)
 
+  gameModeButton = {
+    id="gameModeButton",
+    x = 0, y = 0,
+    w = 300, h = 100, color = {math.random(), math.random(), math.random()},
+    textColor = {math.random(), math.random(), math.random()}, text = "game mode:", value = 1,
+    draw = function (self)
+      love.graphics.setColor(self.color)
+      love.graphics.rectangle("fill", 0, 0, self.w, self.h)
+      love.graphics.setColor(self.textColor)
+      local x, y = .5*(self.w - font:getWidth(self.text)), .25* (self.h - font:getHeight())
+      love.graphics.print(self.text, math.floor(x), math.floor(y))
+      x, y = .5*(self.w - font:getWidth(gameplayModes[self.value])), .75* (self.h - font:getHeight())
+      love.graphics.print(gameplayModes[self.value], math.floor(x), math.floor(y))
+    end,
+    onClick = function (self)
+      self.value = self.value%#gameplayModes+1
+      gameplayMode = gameplayModes[self.value]
+    end
+  }
+  gameModeButton.x = .5*(width - gameModeButton.w)
+  gameModeButton.y = .25*(height - gameModeButton.h)
+  table.insert(mainMenu.children, gameModeButton)
+
   newGameButton = {
     id="ExitButton",
     x = 0, y = 0,
@@ -42,7 +65,7 @@ function projectSetup()
       grid.x = 50
       entities = {}
       table.insert(entities, grid)
-      seed = 1
+      seed = os.time()
       grid.newGame(seed)
       mainMenu.hidden = true
       gameMenu.hidden = false
@@ -183,29 +206,35 @@ function love.mousereleased(x, y, button, isTouch)
       end
     end
   end
-  if gameplayMode == "dokkan" then
+  if gameplayMode == "dokkan" and selection then
     if #selection >= 3 then
       for b, ball in pairs(selection) do
         ball:pop()
       end
     end
-    selection = {}
+    selection = nil
   end
   grab = nil
   grabTime = nil
 end
 
 function love.keypressed(key, scancode, isrepeat)
+  if gameMenu.hidden then return end
   if #grid.busy > 0 then return end
   local num = tonumber(key)
   if num and num <= #cellTypes then
     grid.colorRemoval(num)
   end
+  if key == "escape" then
+    gameMenu.hidden = true
+    mainMenu.hidden = false
+    entities = {}
+  end
 end
 
 function love.mousemoved(x, y, dx, dy)
   if #grid.busy > 0 then return end
-  if gameplayMode == "dokkan" and #selection > 0 then
+  if gameplayMode == "dokkan" and selection and #selection > 0 then
     last = selection[#selection]
     lastGridpos = grid.pixelToGrid(last.x, last.y)
     pos = grid.pixelToGrid(x, y)

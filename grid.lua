@@ -80,6 +80,7 @@ function grid.pixelToGrid(x, y)
 end
 
 function grid:draw()
+  if gameMenu.hidden then return end
   for j = 1, self.dim.j do
     for i = 1, self.dim.i do
       local pixelPos = self.gridToPixel(i, j)
@@ -95,6 +96,7 @@ function grid:draw()
 end
 
 addDrawFunction( function ()
+  if gameMenu.hidden then return end
   if grab then
     love.graphics.push()
     love.graphics.translate(love.mouse.getX(), love.mouse.getY())
