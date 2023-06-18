@@ -17,6 +17,14 @@ function projectSetup()
     draw = function () end
   } 
   table.insert(uis, mainMenu)
+  gameMenu = {
+    id="gameMenu",
+    x=0, y=0, w = width, h = height,
+    children = {},
+    hidden = true,
+    draw = function () end
+  } 
+  table.insert(uis, gameMenu)
 
   newGameButton = {
     id="ExitButton",
@@ -37,6 +45,7 @@ function projectSetup()
       seed = 1
       grid.newGame(seed)
       mainMenu.hidden = true
+      gameMenu.hidden = false
     end
   }
   newGameButton.x = .5*(width - newGameButton.w)
@@ -134,7 +143,9 @@ function projectSetup()
       love.graphics.rectangle("fill", 0, 0, self.w, self.h)
     end
   }
+  audioManagerUI.x = width - audioManagerUI.w
   table.insert(mainMenu.children, audioManagerUI)
+  table.insert(gameMenu.children, audioManagerUI)
 end
 
 function love.mousepressed(x, y, button, isTouch)
@@ -177,8 +188,8 @@ function love.mousereleased(x, y, button, isTouch)
       for b, ball in pairs(selection) do
         ball:pop()
       end
-      selection = {}
     end
+    selection = {}
   end
   grab = nil
   grabTime = nil
@@ -200,6 +211,14 @@ function love.mousemoved(x, y, dx, dy)
     pos = grid.pixelToGrid(x, y)
     if grid[pos.j] and grid[pos.j][pos.i] then
       ballAtPos = grid[pos.j][pos.i].ball
+      for b, ball in pairs(selection) do
+        if ball == ballAtPos then
+          if b == #selection - 1 then
+            table.remove(selection)
+          end
+          return
+        end
+      end
       if last.type == ballAtPos.type and grid.distance(lastGridpos, pos) == 1 then
         table.insert(selection, ballAtPos)
       end

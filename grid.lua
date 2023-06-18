@@ -107,8 +107,11 @@ addDrawFunction( function ()
   if selection then
     for b, ball in pairs(selection) do
       love.graphics.push()
-      love.graphics.setColor(1, 1, 1, .1)
-      love.graphics.circle("fill", ball.x, ball.y, cellSize*.75)
+      love.graphics.translate(math.random(2)-1,math.random(2)-1)
+      love.graphics.setColor(ball.color)
+      love.graphics.circle("fill", ball.x, ball.y, cellSize*.8)
+      love.graphics.setColor(0, 0, 0)
+      love.graphics.circle("line", ball.x, ball.y, cellSize*.8)
       love.graphics.pop()
     end
   end
