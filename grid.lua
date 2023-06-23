@@ -19,6 +19,9 @@ cellTypes = {
   ,{name = "purple", color = {.8, 0, .8}}
   ,{name = "cyan", color = {0, .8, .8}}
   ,{name = "brown", color = {.8, .6,  .6}}
+  -- ,{name = "random", color = {math.random(), math.random(),  math.random(), math.random()+.3}}
+  -- ,{name = "random", color = {math.random(), math.random(),  math.random(), math.random()+.3}}
+  -- ,{name = "random", color = {math.random(), math.random(),  math.random(), math.random()+.3}}
 }
 
 grid = {x = 0, y = 0, w=0, h=0, busy = {}}
@@ -56,6 +59,99 @@ function grid.newGame(seed)
     end
   end
 end
+ 
+function grid.getBallAt(i, j)
+  if grid[j] and grid[j][i] then return grid[j][i].ball end
+end
+
+function grid.checkPossibleMoves()
+  possibleMoveIdentified = {}
+  if gameplayMode == "dokkan" then
+    for j = 1, grid.dim.j do
+      for i = 1, grid.dim.i do
+        local ball = grid.getBallAt(i, j)
+        if ball then
+          steps = {{i=0, j=-1}, {i=0, j=1}, {i=-1, j=0}, {i=1, j=0}, {i=1, j=(i%2*2)-1}, {i=-1, j=(i%2*2)-1}}
+          local n = 0
+          for s, step in pairs(steps) do
+            local ni, nj = i + step.i, j + step.j
+            local nball = grid.getBallAt(ni, nj)
+            if nball and nball.type == ball.type then
+              n = n + 1
+            end
+          end
+          if n >= 2 then
+            return true
+          end
+        end
+      end
+    end
+  end
+  if gameplayMode == "candycrush" then
+    --for each cell
+    for j = 1, grid.dim.j do
+      for i = 1, grid.dim.i do
+        local ball = grid.getBallAt(i, j)
+        if ball then
+          local steps = {{{i=0, j=-1}, {i=0, j=1}}, {{i=-1, j=0}, {i=1, j=(i%2*2)-1}}, {{i=-1, j=(i%2*2)-1}, {i=1, j=0}}}
+          local types = {}
+          -- type of balls around cell
+          for d, direction in pairs(steps) do
+            types[d] = {}
+            for s, step in pairs(direction) do
+              local ni, nj = i + step.i, j + step.j
+              local nball = grid.getBallAt(ni, nj)
+              if nball then
+                types[d][s] = nball.type
+              end
+            end
+          end
+          for d, direction in pairs(types) do
+            -- true if cell is in the middle of match of 3 after a swap
+            -- if types[d][1] and  types[d][1] == types[d][2] then
+            --   for d2, direction2 in pairs(types) do
+            --     if d ~= d2 and (types[d2][1] == types[d][1] or types[d2][2] == types[d][1]) then
+            --       table.insert(possibleMoveIdentified, ball)
+            --     end
+            --   end
+            -- end
+            -- true if cell is in the side of match of 3 after a swap
+            for s, step in pairs(steps[d]) do
+              local ni, nj = i + step.i, j + step.j
+              local nextSteps = {{{i=0, j=-1}, {i=0, j=1}}, {{i=-1, j=(ni%2*2)-1}, {i=1, j=0}},{{i=-1, j=0}, {i=1, j=(ni%2*2)-1}}}
+              local ni, nj = ni + nextSteps[d][s].i, nj + nextSteps[d][s].j
+              local nball = grid.getBallAt(ni, nj)
+              if nball and types[d][s] == nball.type then
+                for d2, direction2 in pairs(types) do
+                  for s2, step2 in pairs(direction2) do
+                    if (d ~= d2 or s2 ~= s) and (types[d2][s2] == types[d][s]) then
+                      table.insert(possibleMoveIdentified, {ball, grid.getBallAt(i+steps[d2][s2].i, j+steps[d2][s2].j)})
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+  if #possibleMoveIdentified > 0 then return true end
+  return false
+end
+
+addDrawFunction(
+  function ()
+    if possibleMoveIdentified then
+      love.graphics.setColor(1, 1, 1, .8)
+      for m, move in pairs(possibleMoveIdentified) do
+        love.graphics.circle("fill", move[1].x, move[1].y, 5)
+        love.graphics.circle("fill", move[2].x, move[2].y, 17)
+        love.graphics.line(move[1].x, move[1].y, move[2].x, move[2].y)
+      end
+    end
+  end, 9
+)
 
 function grid.getNeighours(i, j)
   local n = {}
@@ -124,8 +220,18 @@ addDrawFunction( function ()
 end, 6)
 
 function grid:update(dt)
-  if #grid.busy > 0 or gameplayMode ~= "candycrush" then return end
-  grid.match()
+  if #grid.busy > 0  then return end
+  if gameplayMode == "candycrush" then
+    grid.match()
+  end
+  if not checked then
+    checked = true
+    if not grid.checkPossibleMoves() then
+      print("GAME OVER")
+    else
+      print("keep going...")
+    end
+  end
 end
 
 function grid.match()
@@ -152,6 +258,7 @@ function grid.match()
   for b, ball in pairs(tobepopped) do
     ball:pop()
   end
+  if change then checked = false end
   return change
 end
 
@@ -277,6 +384,7 @@ function grid.colorRemoval(type)
   for b, ball in pairs(tobepopped) do
     ball:pop()
   end
+  if change then checked = false end
   return change
 end
 

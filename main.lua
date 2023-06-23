@@ -69,6 +69,7 @@ function projectSetup()
       grid.newGame(seed)
       mainMenu.hidden = true
       gameMenu.hidden = false
+ 
     end
   }
   newGameButton.x = .5*(width - newGameButton.w)
@@ -169,6 +170,7 @@ function projectSetup()
   audioManagerUI.x = width - audioManagerUI.w
   table.insert(mainMenu.children, audioManagerUI)
   table.insert(gameMenu.children, audioManagerUI)
+  
 end
 
 function love.mousepressed(x, y, button, isTouch)
@@ -212,6 +214,7 @@ function love.mousereleased(x, y, button, isTouch)
         ball:pop()
       end
     end
+    checked = false 
     selection = nil
   end
   grab = nil
