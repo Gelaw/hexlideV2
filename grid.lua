@@ -108,13 +108,18 @@ function grid.checkPossibleMoves()
           end
           for d, direction in pairs(types) do
             -- true if cell is in the middle of match of 3 after a swap
-            -- if types[d][1] and  types[d][1] == types[d][2] then
-            --   for d2, direction2 in pairs(types) do
-            --     if d ~= d2 and (types[d2][1] == types[d][1] or types[d2][2] == types[d][1]) then
-            --       table.insert(possibleMoveIdentified, ball)
-            --     end
-            --   end
-            -- end
+            if types[d][1] and  types[d][1] == types[d][2] then
+              for d2, direction2 in pairs(types) do
+                if d ~= d2 then
+                  if types[d2][1] == types[d][1]  then
+                    table.insert(possibleMoveIdentified, {ball, grid.getBallAt(i+steps[d2][1].i, j+steps[d2][1].j)})
+                  end
+                  if types[d2][2] == types[d][1] then
+                    table.insert(possibleMoveIdentified, {ball, grid.getBallAt(i+steps[d2][2].i, j+steps[d2][2].j)})
+                  end
+                end
+              end
+            end
             -- true if cell is in the side of match of 3 after a swap
             for s, step in pairs(steps[d]) do
               local ni, nj = i + step.i, j + step.j
