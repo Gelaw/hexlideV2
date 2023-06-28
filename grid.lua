@@ -225,17 +225,24 @@ addDrawFunction( function ()
 end, 6)
 
 function grid:update(dt)
-  if #grid.busy > 0  then return end
+  if #grid.busy > 0  then
+    midCheck = false
+    possibleMoveIdentified = {}
+    return
+  end
   if gameplayMode == "candycrush" then
     grid.match()
   end
   if not checked then
-    checked = true
-    if not grid.checkPossibleMoves() then
-      print("GAME OVER")
-    else
-      print("keep going...")
+    if midCheck then
+      checked = true
+      if not grid.checkPossibleMoves() then
+        print("GAME OVER")
+      else
+        print("keep going...")
+      end
     end
+    midCheck = true
   end
 end
 
