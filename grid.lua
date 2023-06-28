@@ -3,9 +3,9 @@
 cellSize = 30
 
 hexVertex = {}
-for a = 0, 2*math.pi, 2*math.pi/6 do
-  table.insert(hexVertex, (cellSize*.9) * math.cos(a))
-  table.insert(hexVertex, (cellSize*.9) * math.sin(a))
+for angle = 0, 2*math.pi, 2*math.pi/6 do
+  table.insert(hexVertex, (cellSize*.9) * math.cos(angle))
+  table.insert(hexVertex, (cellSize*.9) * math.sin(angle))
 end
 
 cellTypes = {
@@ -147,7 +147,7 @@ end
 
 addDrawFunction(
   function ()
-    if possibleMoveIdentified then
+    if possibleMoveIdentified and debugPossibleMoves then
       love.graphics.setColor(1, 1, 1, .8)
       for m, move in pairs(possibleMoveIdentified) do
         love.graphics.circle("fill", move[1].x, move[1].y, 5)
@@ -238,8 +238,6 @@ function grid:update(dt)
       checked = true
       if not grid.checkPossibleMoves() then
         print("GAME OVER")
-      else
-        print("keep going...")
       end
     end
     midCheck = true
@@ -298,6 +296,7 @@ function spawnBall(i, j)
   ball.type = 0
   ball.color = {.6, 0, .6}
   ball.speed = {x=0, y=0}
+
   ball.init = function (self, i, j)
     local pos = grid.gridToPixel(i, j)
     self.x, self.y = pos.x, pos.y
@@ -313,6 +312,7 @@ function spawnBall(i, j)
       grid.occupy(self)
     end
   end
+
   ball.draw = function (self)
     if self == grab then return end
     love.graphics.setColor(self.color)
@@ -320,6 +320,7 @@ function spawnBall(i, j)
     love.graphics.setColor(0, 0, 0)
     love.graphics.circle("line", self.x, self.y, cellSize*.75)
   end
+
   ball.update = function (self, dt)
     if self.terminated then return end
     local gridPos = grid.pixelToGrid(self.x, self.y)
@@ -329,7 +330,7 @@ function spawnBall(i, j)
       gridPos = grid.pixelToGrid(self.x, self.y)
     end
     local matchingPixelPos = grid.gridToPixel(gridPos.i, math.floor(math.max(gridPos.j, 1)))
-    if (grid[gridPos.j+1] and grid[gridPos.j+1][gridPos.i] and grid[gridPos.j+1][gridPos.i].ball == nil) or self.y < matchingPixelPos.y then
+    if (grid.getBallAt(i, j + 1) == nil) or self.y < matchingPixelPos.y then
       if not self.falling then
         grid[gridPos.j][gridPos.i].type = nil
         grid[gridPos.j][gridPos.i].ball = nil
@@ -348,6 +349,7 @@ function spawnBall(i, j)
       grid[gridPos.j][gridPos.i].ball = self
     end
   end
+
   ball.pop = function (self)
     if self.popped then return end
     self.popped = true
@@ -358,6 +360,7 @@ function spawnBall(i, j)
       grid[gridPos.j][gridPos.i].ball = nil
     end
   end
+
   ball:init(i, j)
   table.insert(entities, ball)
   return ball

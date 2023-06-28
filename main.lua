@@ -175,6 +175,7 @@ end
 
 function love.mousepressed(x, y, button, isTouch)
   local press = UIMousePress(x, y , button)
+  if gameMenu.hidden then return end
   if #grid.busy > 0 then return end
   if not press then
     if gameplayMode == "candycrush" then
@@ -195,6 +196,7 @@ end
 
 function love.mousereleased(x, y, button, isTouch)
   UIMouseRelease(x, y, button)
+  if gameMenu.hidden then return end
   if #grid.busy > 0 then return end
   if gameplayMode == "candycrush" and grab then
     local dropPos = grid.pixelToGrid(x, y)
@@ -236,6 +238,7 @@ function love.keypressed(key, scancode, isrepeat)
 end
 
 function love.mousemoved(x, y, dx, dy)
+  if gameMenu.hidden then return end
   if #grid.busy > 0 then return end
   if gameplayMode == "dokkan" and selection and #selection > 0 then
     last = selection[#selection]
